@@ -205,6 +205,7 @@ diesel::table! {
         users_active_week -> Int8,
         users_active_month -> Int8,
         users_active_half_year -> Int8,
+        interactions_month -> Int8,
         hot_rank -> Float8,
         subscribers_local -> Int8,
     }
@@ -756,6 +757,7 @@ diesel::table! {
         controversy_rank -> Float8,
         instance_id -> Int4,
         scaled_rank -> Float8,
+        balanced_rank -> Float8,
     }
 }
 

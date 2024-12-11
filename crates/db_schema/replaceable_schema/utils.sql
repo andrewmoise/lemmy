@@ -33,7 +33,9 @@ now() - published) < '7 days' THEN
         0.0
     END;
 
-CREATE FUNCTION r.scaled_rank (score numeric, published timestamp with time zone, users_active_month numeric)
+-- Note: scaled_rank() is used for both 'Scaled' and 'Balanced', just with a different activity metric
+
+CREATE FUNCTION r.scaled_rank (score numeric, published timestamp with time zone, activity_metric numeric)
     RETURNS double precision
     LANGUAGE sql
     IMMUTABLE PARALLEL SAFE
@@ -42,7 +44,7 @@ CREATE FUNCTION r.scaled_rank (score numeric, published timestamp with time zone
     -- There may need to be a scale factor multiplied to users_active_month, to make
     -- the log curve less pronounced. This can be tuned in the future.
     RETURN (
-        r.hot_rank (score, published) / log(2 + users_active_month)
+        r.hot_rank (score, published) / log(2 + activity_metric)
 );
 
 -- For tables with `deleted` and `removed` columns, this function determines which rows to include in a count.

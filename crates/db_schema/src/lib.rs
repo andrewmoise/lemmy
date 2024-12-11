@@ -85,6 +85,7 @@ pub enum SortType {
   TopNineMonths,
   Controversial,
   Scaled,
+  Balanced,
 }
 
 #[derive(EnumString, Display, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]

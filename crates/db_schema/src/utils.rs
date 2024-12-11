@@ -459,7 +459,7 @@ pub fn naive_now() -> DateTime<Utc> {
 
 pub fn post_to_comment_sort_type(sort: SortType) -> CommentSortType {
   match sort {
-    SortType::Active | SortType::Hot | SortType::Scaled => CommentSortType::Hot,
+    SortType::Active | SortType::Hot | SortType::Scaled | SortType::Balanced => CommentSortType::Hot,
     SortType::New | SortType::NewComments | SortType::MostComments => CommentSortType::New,
     SortType::Old => CommentSortType::Old,
     SortType::Controversial => CommentSortType::Controversial,
@@ -490,9 +490,10 @@ pub mod functions {
     fn hot_rank(score: BigInt, time: Timestamptz) -> Double;
   }
 
+  // Note - scaled_rank() is used for both 'Scaled' and 'Balanced'
   sql_function! {
     #[sql_name = "r.scaled_rank"]
-    fn scaled_rank(score: BigInt, time: Timestamptz, users_active_month: BigInt) -> Double;
+    fn scaled_rank(score: BigInt, time: Timestamptz, activity_metric: BigInt) -> Double;
   }
 
   sql_function! {

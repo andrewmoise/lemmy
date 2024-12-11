@@ -229,18 +229,21 @@ async fn process_post_aggregates_ranks_in_batches(conn: &mut AsyncPgConnection) 
   while let Some(previous_batch_last_published) = previous_batch_result {
     let result = sql_query(
       r#"WITH batch AS (SELECT pa.post_id
-               FROM post_aggregates pa
-               WHERE pa.published > $1
-               AND (pa.hot_rank != 0 OR pa.hot_rank_active != 0)
-               ORDER BY pa.published
-               LIMIT $2
-               FOR UPDATE SKIP LOCKED)
-         UPDATE post_aggregates pa
-           SET hot_rank = r.hot_rank(pa.score, pa.published),
-           hot_rank_active = r.hot_rank(pa.score, pa.newest_comment_time_necro),
-           scaled_rank = r.scaled_rank(pa.score, pa.published, ca.users_active_month)
-         FROM batch, community_aggregates ca
-         WHERE pa.post_id = batch.post_id and pa.community_id = ca.community_id RETURNING pa.published;
+                FROM post_aggregates pa
+                WHERE pa.published > $1
+                AND (pa.hot_rank != 0 OR pa.hot_rank_active != 0)
+                ORDER BY pa.published
+                LIMIT $2
+                FOR UPDATE SKIP LOCKED)
+          UPDATE post_aggregates pa
+            SET hot_rank = r.hot_rank(pa.score, pa.published),
+            hot_rank_active = r.hot_rank(pa.score, pa.newest_comment_time_necro),
+            scaled_rank = r.scaled_rank(pa.score, pa.published, ca.users_active_month),
+            balanced_rank = r.scaled_rank(pa.score, pa.published, ca.interactions_month)
+          FROM batch, community_aggregates ca
+          WHERE pa.post_id = batch.post_id 
+          AND pa.community_id = ca.community_id
+          RETURNING pa.published;
     "#,
     )
     .bind::<Timestamptz, _>(previous_batch_last_published)
@@ -409,6 +412,18 @@ async fn active_counts(pool: &mut DbPool<'_>) {
           .map_err(|e| error!("Failed to update community stats: {e}"))
           .ok();
       }
+
+      let update_activity_stmt = "update community_aggregates ca set interactions_month = \
+        COALESCE((select sum(comments + upvotes + downvotes) \
+        from post_aggregates pa \
+        where pa.community_id = ca.community_id \
+        and pa.published >= date_trunc('month', CURRENT_TIMESTAMP - interval '1 month')), 0)";
+  
+      sql_query(update_activity_stmt)
+          .execute(&mut conn)
+          .await
+          .map_err(|e| error!("Failed to update community activity: {e}"))
+          .ok();
 
       info!("Done.");
     }

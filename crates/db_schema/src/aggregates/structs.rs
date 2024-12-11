@@ -66,6 +66,9 @@ pub struct CommunityAggregates {
   pub users_active_month: i64,
   /// The number of users with any activity in the last year.
   pub users_active_half_year: i64,
+  /// Number of any interactions over the last month.
+  #[serde(skip)]
+  pub interactions_month: i64,
   #[serde(skip)]
   pub hot_rank: f64,
   pub subscribers_local: i64,
@@ -144,6 +147,8 @@ pub struct PostAggregates {
   /// A rank that amplifies smaller communities
   #[serde(skip)]
   pub scaled_rank: f64,
+  #[serde(skip)]
+  pub balanced_rank: f64,
 }
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize, Clone)]
